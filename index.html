@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadTrim AI — Scrub. Score. Close.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+    }
+    .lead-row {
+      transition: background-color 0.1s ease;
+    }
+    .lead-row:hover {
+      background-color: #1A2233;
+    }
+    .stat-value {
+      font-variant-numeric: tabular-nums;
+    }
+    .score-badge {
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .chip {
+      font-size: 10px;
+      line-height: 1;
+    }
+    .dropzone-active {
+      border-color: #10B981 !important;
+      background-color: rgba(16, 185, 129, 0.06);
+    }
+    .focus-ring {
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .focus-ring:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+      border-color: #10B981;
+    }
+    .switch {
+      transition: background-color 0.2s ease;
+    }
+    .switch-knob {
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .section-header {
+      letter-spacing: -0.015em;
+    }
+    table thead th {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .url-truncate {
+      max-width: 168px;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+    .empty-state {
+      transition: all 0.2s ease;
+    }
+  </style>
+</head>
+<body class="bg-[#0A0E17] text-[#E6EAF2] min-h-screen">
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-[#232B3B] bg-[#0A0E17]/95 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo lockup -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6366F1] via-[#6366F1] to-[#10B981] flex items-center justify-center shadow-lg shadow-black/40 ring-1 ring-white/10">
+          <i data-lucide="scissors" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="font-bold text-[21px] tracking-[-0.02em] leading-none">LeadTrim AI</div>
+          <div class="text-[10px] text-[#8A93A6] -mt-px tracking-[0.5px]">SCRUB. SCORE. CLOSE.</div>
+        </div>
+      </div>
+
+      <!-- Right side -->
+      <div class="flex items-center gap-3">
+        <!-- Engine status -->
+        <div class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A2233] border border-[#232B3B]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="cpu" class="w-4 h-4 text-[#10B981]"></i>
+            <div class="flex items-center gap-1.5 text-sm">
+              <span class="text-[#8A93A6]">Engine:</span>
+              <span class="font-medium text-[#10B981]">Online</span>
+            </div>
+          </div>
+          <div class="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
+        </div>
+
+        <!-- Avatar -->
+        <div class="flex items-center gap-2.5 pl-2 pr-1 py-1 rounded-full bg-[#121826] border border-[#232B3B]">
+          <div class="w-7 h-7 rounded-full bg-[#6366F1] flex items-center justify-center text-white text-xs font-bold ring-2 ring-[#232B3B]">AR</div>
+          <div class="hidden sm:block pr-2">
+            <div class="text-xs font-medium leading-none">Alex Rivera</div>
+            <div class="text-[10px] text-[#8A93A6]">Sales Ops</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subtle AI glow -->
+  <div class="max-w-7xl mx-auto px-6 relative">
+    <div class="absolute left-1/2 -translate-x-1/2 -top-3 w-[560px] h-[68px] bg-[radial-gradient(ellipse_at_50%_45%,#6366F1_0%,#10B981_38%,transparent_78%)] opacity-[0.13] blur-[52px] pointer-events-none z-0"></div>
+  </div>
+
+  <!-- Main content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- LEFT COLUMN -->
+      <div class="lg:col-span-1 space-y-6">
+        
+        <!-- Upload Zone -->
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl p-6 shadow-lg shadow-black/30">
+          <div class="flex items-center gap-2.5 mb-4">
+            <i data-lucide="upload-cloud" class="w-5 h-5 text-[#10B981]"></i>
+            <h2 class="font-semibold text-lg section-header tracking-[-0.01em]">Import Leads</h2>
+          </div>
+
+          <!-- Dropzone -->
+          <div id="dropzone"
+               class="group border-2 border-dashed border-[#232B3B] hover:border-[#10B981] hover:bg-[#10B981]/5 active:bg-[#10B981]/10 transition-all duration-200 rounded-xl h-[158px] flex flex-col items-center justify-center cursor-pointer text-center px-6">
+            <div class="w-11 h-11 rounded-2xl bg-[#1A2233] flex items-center justify-center mb-3 group-hover:bg-[#10B981]/10 transition-colors">
+              <i data-lucide="upload-cloud" class="w-6 h-6 text-[#8A93A6] group-hover:text-[#10B981] transition-colors"></i>
+            </div>
+            <div class="font-semibold text-sm">Drop your scraped CSV here</div>
+            <div class="text-xs text-[#8A93A6] mt-0.5">Live analysis • real website checks</div>
+          </div>
+          <input type="file" id="file-input" accept=".csv,text/csv" class="hidden">
+
+          <!-- Sample data button -->
+          <button id="sample-btn" onclick="loadSampleData()"
+                  class="mt-4 w-full flex items-center justify-center gap-2.5 bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] text-white font-semibold py-[13px] rounded-xl text-[13px] transition-all active:scale-[0.985]">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Load Sample Scraped List</span>
+          </button>
+          <div class="mt-2 text-center">
+            <span class="inline-block text-[10px] px-2 py-px rounded bg-[#1A2233] text-[#8A93A6]">12 curated leads • zero setup</span>
+          </div>
+
+          <!-- Live processing indicator (shown during backend work) -->
+          <div id="processing-indicator" class="hidden mt-3 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A2233] border border-[#6366F1]/30 text-xs">
+              <i data-lucide="cpu" class="w-3.5 h-3.5 text-[#6366F1] animate-pulse"></i>
+              <span class="font-medium text-[#6366F1]">Analyzing websites live...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options Panel -->
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl p-6 shadow-lg shadow-black/30">
+          <div class="flex items-center gap-2.5 mb-5">
+            <i data-lucide="sliders-horizontal" class="w-5 h-5 text-[#6366F1]"></i>
+            <h2 class="font-semibold text-lg section-header tracking-[-0.01em]">Scrub Criteria</h2>
+          </div>
+
+          <div class="space-y-[17px]">
+            <!-- Toggle 1: Filter broken links -->
+            <div class="flex items-start gap-4">
+              <div class="flex-1 min-w-0 pt-0.5">
+                <div class="font-medium text-[13px]">Filter broken links</div>
+                <div class="text-xs text-[#8A93A6] leading-snug mt-px">Remove dead or unreachable domains.</div>
+              </div>
+              <div id="toggle-broken" role="switch" aria-checked="true" tabindex="0"
+                   class="switch relative flex-shrink-0 w-11 h-6 rounded-full bg-[#10B981] cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121826] focus-visible:ring-[#10B981] mt-0.5"
+                   onclick="toggleFilter('broken', this)">
+                <div class="switch-knob absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow-md translate-x-5"></div>
+              </div>
+            </div>
+
+            <!-- Toggle 2: Detect Tech Stack -->
+            <div class="flex items-start gap-4">
+              <div class="flex-1 min-w-0 pt-0.5">
+                <div class="font-medium text-[13px]">Detect Tech Stack</div>
+                <div class="text-xs text-[#8A93A6] leading-snug mt-px">Surface frameworks &amp; tools in use.</div>
+              </div>
+              <div id="toggle-tech" role="switch" aria-checked="true" tabindex="0"
+                   class="switch relative flex-shrink-0 w-11 h-6 rounded-full bg-[#10B981] cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121826] focus-visible:ring-[#10B981] mt-0.5"
+                   onclick="toggleFilter('tech', this)">
+                <div class="switch-knob absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow-md translate-x-5"></div>
+              </div>
+            </div>
+
+            <!-- Toggle 3: Flag Hiring Context -->
+            <div class="flex items-start gap-4">
+              <div class="flex-1 min-w-0 pt-0.5">
+                <div class="font-medium text-[13px]">Flag Hiring Context</div>
+                <div class="text-xs text-[#8A93A6] leading-snug mt-px">Mark companies actively hiring.</div>
+              </div>
+              <div id="toggle-hiring" role="switch" aria-checked="true" tabindex="0"
+                   class="switch relative flex-shrink-0 w-11 h-6 rounded-full bg-[#10B981] cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121826] focus-visible:ring-[#10B981] mt-0.5"
+                   onclick="toggleFilter('hiring', this)">
+                <div class="switch-knob absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow-md translate-x-5"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live count -->
+          <div id="showing-count"
+               class="mt-6 pt-4 border-t border-[#232B3B] text-xs font-medium text-[#8A93A6]">
+            No data loaded
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Stats -->
+        <div id="stats-row" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Search + Export -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div class="flex-1 relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-[#8A93A6] pointer-events-none"></i>
+            <input id="search-input" type="text" 
+                   class="w-full bg-[#1A2233] border border-[#232B3B] focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981]/30 placeholder:text-[#8A93A6] transition-all pl-10 pr-4 py-[11px] rounded-xl text-sm focus-ring"
+                   placeholder="Search company, URL, or keyword…">
+          </div>
+          <button onclick="exportCsv()"
+                  class="flex items-center justify-center gap-2 px-6 py-[11px] rounded-xl bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] font-semibold text-sm text-white transition-all active:scale-[0.985] whitespace-nowrap">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export Cleaned CSV</span>
+          </button>
+        </div>
+
+        <!-- Results Table -->
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl shadow-lg shadow-black/30 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[760px]">
+              <thead>
+                <tr class="border-b border-[#232B3B] bg-[#1A2233]">
+                  <th class="text-left py-3.5 pl-6 pr-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6] w-12">Rank</th>
+                  <th class="text-left py-3.5 px-4 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6]">Company</th>
+                  <th class="text-left py-3.5 px-4 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6]">Website</th>
+                  <th class="text-left py-3.5 px-4 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6]">AI Fit Score</th>
+                  <th class="text-left py-3.5 px-4 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6]">Status</th>
+                  <th class="text-left py-3.5 pl-4 pr-6 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8A93A6]">Key Keywords</th>
+                </tr>
+              </thead>
+              <tbody id="table-body" class="text-[13px]">
+                <!-- Populated dynamically by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <div class="inline-flex items-center gap-2 text-[10px] text-[#8A93A6]/70">
+            <i data-lucide="shield" class="w-3 h-3"></i>
+            <span>All processing happens locally in your browser. Nothing is sent anywhere.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Tailwind theme extension
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+
+    // ===== EMBEDDED SAMPLE DATA =====
+    const SAMPLE_LEADS = [
+      { company: "Nimbus Analytics",   url: "https://nimbusanalytics.io",   score: "A", status: "Active",       tech: ["React","AWS","Stripe"],     hiring: true,  keywords: ["SaaS","Series B"] },
+      { company: "Forge Logistics",    url: "https://forgelogistics.com",   score: "B", status: "Active",       tech: ["Vue","GCP"],                hiring: true,  keywords: ["Supply Chain"] },
+      { company: "Halcyon Health",     url: "https://halcyonhealth.co",     score: "A", status: "Needs Review", tech: ["Angular","Azure"],          hiring: false, keywords: ["HealthTech","HIPAA"] },
+      { company: "Driftwood Media",    url: "https://driftwood-media.net",  score: "C", status: "Active",       tech: ["WordPress"],                hiring: false, keywords: ["Agency"] },
+      { company: "Apex Robotics",      url: "https://apexrobotics.ai",      score: "A", status: "Active",       tech: ["Python","Kubernetes"],      hiring: true,  keywords: ["Hardware","Seed"] },
+      { company: "Pinewood Capital",   url: "https://pinewoodcap.dead",     score: "D", status: "Broken",       tech: [],                           hiring: false, keywords: ["Finance"] },
+      { company: "Cobalt Studios",     url: "https://cobaltstudios.design", score: "B", status: "Needs Review", tech: ["Next.js","Figma"],          hiring: true,  keywords: ["Design","SaaS"] },
+      { company: "Verdant Foods",      url: "https://verdantfoods.com",     score: "C", status: "Active",       tech: ["Shopify"],                  hiring: false, keywords: ["DTC","CPG"] },
+      { company: "Quantum Ledger",     url: "https://quantumledger.xyz",    score: "B", status: "Active",       tech: ["Rust","Postgres"],          hiring: true,  keywords: ["Fintech","Series A"] },
+      { company: "Old Mill Press",     url: "https://oldmillpress.zzz",     score: "F", status: "Broken",       tech: [],                           hiring: false, keywords: ["Publishing"] },
+      { company: "Solstice Energy",    url: "https://solsticeenergy.io",    score: "A", status: "Active",       tech: ["TypeScript","AWS"],         hiring: true,  keywords: ["CleanTech","Series C"] },
+      { company: "Meridian Travel",    url: "https://meridiantravel.com",   score: "C", status: "Needs Review", tech: ["Laravel"],                  hiring: false, keywords: ["Travel"] }
+    ];
+
+    // ===== STATE =====
+    let leads = [];
+    let filteredLeads = [];
+    let searchTerm = '';
+    let filterBrokenLinks = true;
+    let detectTechStack = true;
+    let flagHiringContext = true;
+
+    // ===== HELPERS =====
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function getScoreBadge(score) {
+      const palette = {
+        'A': 'bg-[#10B981] text-white',
+        'B': 'bg-[#34D399] text-[#0A0E17]',
+        'C': 'bg-[#F59E0B] text-white',
+        'D': 'bg-[#FB923C] text-white',
+        'F': 'bg-[#EF4444] text-white'
+      };
+      const cls = palette[score] || 'bg-[#8A93A6] text-white';
+      return `<div class="score-badge inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-[15px] tracking-[-0.5px] ${cls}">${escapeHtml(score)}</div>`;
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'Active') {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#10B981]/10 text-[#10B981]"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i>Active</span>`;
+      }
+      if (status === 'Needs Review') {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#F59E0B]/10 text-[#F59E0B]"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Needs Review</span>`;
+      }
+      if (status === 'Broken') {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EF4444]/10 text-[#EF4444]"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i>Broken</span>`;
+      }
+      return `<span class="px-3 py-1 text-xs">${escapeHtml(status)}</span>`;
+    }
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm max-w-[320px] ${isError 
+        ? 'bg-[#3F1F1F] border-[#EF4444]/50 text-[#FCA5A5]' 
+        : 'bg-[#121826] border-[#232B3B] text-[#E6EAF2]'}`;
+      
+      toast.innerHTML = `
+        <div class="flex-1 leading-snug">${escapeHtml(message)}</div>
+        <button onclick="this.closest('.pointer-events-auto').remove()" 
+                class="text-[#8A93A6] hover:text-white p-1 -mr-1 transition-colors">×</button>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+      }, isError ? 5200 : 2600);
+    }
+
+    // ===== CSV PARSER =====
+    function parseCSVLine(line) {
+      const result = [];
+      let cell = '';
+      let inQuote = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          if (inQuote && i + 1 < line.length && line[i + 1] === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuote = !inQuote;
+          }
+        } else if (c === ',' && !inQuote) {
+          result.push(cell);
+          cell = '';
+        } else {
+          cell += c;
+        }
+      }
+      result.push(cell);
+      return result;
+    }
+
+    function parseCSV(text) {
+      const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+      if (!normalized) return [];
+      const lines = normalized.split('\n');
+      if (lines.length < 2) return [];
+
+      const rawHeaders = parseCSVLine(lines[0]);
+      const headers = rawHeaders.map(h => h.toLowerCase().trim().replace(/\s+/g, '_'));
+
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const values = parseCSVLine(line);
+        const row = {};
+        headers.forEach((h, j) => {
+          row[h] = values[j] !== undefined ? values[j].trim() : '';
+        });
+
+        const company = row.company || row.company_name || row.name || row.organization || row['company_name'] || '';
+        let url = row.website || row.url || row.domain || row.web || row.link || row.site || '';
+
+        if (url && !/^https?:\/\//i.test(url)) {
+          url = 'https://' + url.replace(/^\/+/, '');
+        }
+        if (!company && !url) continue;
+
+        data.push({
+          company: company || 'Unnamed Lead',
+          url: url || '',
+          score: 'C',
+          status: 'Active',
+          tech: [],
+          hiring: false,
+          keywords: []
+        });
+      }
+      return data;
+    }
+
+    // ===== CORE LOGIC =====
+    function applyFilters() {
+      let result = leads.slice();
+
+      // Search filter (live)
+      if (searchTerm && searchTerm.trim()) {
+        const q = searchTerm.toLowerCase().trim();
+        result = result.filter(lead => {
+          const hay = [
+            lead.company || '',
+            lead.url || '',
+            ...(lead.keywords || []),
+            ...(lead.tech || [])
+          ].join(' ').toLowerCase();
+          return hay.includes(q);
+        });
+      }
+
+      // Broken links filter
+      if (filterBrokenLinks) {
+        result = result.filter(lead => lead.status !== 'Broken');
+      }
+
+      filteredLeads = result;
+      renderTable();
+      updateStats();
+      updateShowingCount();
+    }
+
+    function updateShowingCount() {
+      const el = document.getElementById('showing-count');
+      if (!el) return;
+      if (leads.length === 0) {
+        el.textContent = 'No data loaded';
+      } else {
+        el.textContent = `Showing ${filteredLeads.length} of ${leads.length} leads`;
+      }
+    }
+
+    function updateStats() {
+      const container = document.getElementById('stats-row');
+      if (!container) return;
+
+      const total = filteredLeads.length;
+      let avgLetter = '—';
+      let flagged = 0;
+
+      if (total > 0) {
+        const scoreValues = { A: 5, B: 4, C: 3, D: 2, F: 0 };
+        let sum = 0;
+        filteredLeads.forEach(lead => {
+          sum += scoreValues[lead.score] ?? 3;
+          if (lead.status === 'Needs Review') flagged++;
+        });
+        const avg = sum / total;
+        if (avg >= 4.5) avgLetter = 'A';
+        else if (avg >= 3.5) avgLetter = 'B';
+        else if (avg >= 2.5) avgLetter = 'C';
+        else if (avg >= 1.5) avgLetter = 'D';
+        else avgLetter = 'F';
+      }
+
+      container.innerHTML = `
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold tracking-[-1.5px] stat-value">${total}</div>
+            <div class="text-xs text-[#8A93A6] mt-0.5">Total Leads</div>
+          </div>
+          <i data-lucide="users" class="w-6 h-6 text-[#6366F1]"></i>
+        </div>
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold tracking-[-1.5px] stat-value">${avgLetter}</div>
+            <div class="text-xs text-[#8A93A6] mt-0.5">Avg. Fit Score</div>
+          </div>
+          <i data-lucide="award" class="w-6 h-6 text-[#10B981]"></i>
+        </div>
+        <div class="bg-[#121826] border border-[#232B3B] rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold tracking-[-1.5px] stat-value text-[#F59E0B]">${flagged}</div>
+            <div class="text-xs text-[#8A93A6] mt-0.5">Flagged for Review</div>
+          </div>
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-[#F59E0B]"></i>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      // No data loaded yet
+      if (leads.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-6 py-16">
+              <div class="empty-state flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-2xl bg-[#1A2233] flex items-center justify-center mb-4">
+                  <i data-lucide="upload-cloud" class="w-6 h-6 text-[#8A93A6]"></i>
+                </div>
+                <div class="font-semibold">Ready to scrub some leads?</div>
+                <div class="text-sm text-[#8A93A6] max-w-[280px] mt-1.5 leading-snug">Upload a real CSV for live website analysis, or click the green button for an instant sample demo.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Filters returned nothing
+      if (filteredLeads.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-6 py-16">
+              <div class="empty-state flex flex-col items-center justify-center text-center">
+                <i data-lucide="search" class="w-8 h-8 text-[#8A93A6] mb-3"></i>
+                <div class="font-medium text-[#8A93A6]">No leads match your filters.</div>
+                <div class="text-xs text-[#8A93A6]/70 mt-1">Try clearing the search or toggling scrub criteria.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Render rows
+      filteredLeads.forEach((lead, index) => {
+        const rank = index + 1;
+        const tr = document.createElement('tr');
+        tr.className = 'lead-row border-b border-[#232B3B] last:border-b-0';
+
+        // Company cell (with optional tech chips)
+        let companyHTML = `<div class="font-semibold tracking-[-0.1px]">${escapeHtml(lead.company)}</div>`;
+        if (detectTechStack && lead.tech && lead.tech.length > 0) {
+          const techChips = lead.tech.map(t =>
+            `<span class="chip inline-block px-2 py-[3px] bg-[#1A2233] text-[#8A93A6] rounded-full mr-1 mb-1">${escapeHtml(t)}</span>`
+          ).join('');
+          companyHTML += `<div class="mt-1.5 flex flex-wrap -mb-1">${techChips}</div>`;
+        }
+
+        // Keywords (with dynamic Hiring chip)
+        let keywords = [...(lead.keywords || [])];
+        if (flagHiringContext && lead.hiring && !keywords.includes('Hiring')) {
+          keywords.unshift('Hiring');
+        }
+        let keywordsHTML = '';
+        if (keywords.length) {
+          keywordsHTML = keywords.map(kw => {
+            const isHiring = kw === 'Hiring';
+            const cls = isHiring
+              ? 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20'
+              : 'bg-[#1A2233] text-[#8A93A6]';
+            return `<span class="chip px-2.5 py-[5px] rounded-full ${cls}">${escapeHtml(kw)}</span>`;
+          }).join(' ');
+        } else {
+          keywordsHTML = '<span class="text-[#8A93A6]/50 text-xs">—</span>';
+        }
+
+        // Website
+        let websiteHTML = '—';
+        if (lead.url) {
+          const display = escapeHtml(lead.url.replace(/^https?:\/\//i, ''));
+          websiteHTML = `<a href="${escapeHtml(lead.url)}" target="_blank" rel="noopener noreferrer"
+            class="group inline-flex items-center gap-1.5 text-[#6366F1] hover:text-[#818CF8] transition-colors">
+              <i data-lucide="link" class="w-3.5 h-3.5 opacity-75 group-hover:opacity-100"></i>
+              <span class="url-truncate truncate align-bottom">${display}</span>
+            </a>`;
+        }
+
+        tr.innerHTML = `
+          <td class="py-[15px] pl-6 pr-2 font-mono text-xs text-[#8A93A6]">${rank}</td>
+          <td class="py-[15px] px-4">${companyHTML}</td>
+          <td class="py-[15px] px-4">${websiteHTML}</td>
+          <td class="py-[15px] px-4">${getScoreBadge(lead.score)}</td>
+          <td class="py-[15px] px-4">${getStatusBadge(lead.status)}</td>
+          <td class="py-[15px] pl-4 pr-6"><div class="flex flex-wrap gap-1">${keywordsHTML}</div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    function updateToggleVisual(el, isOn) {
+      if (!el) return;
+      const knob = el.querySelector('.switch-knob') || el.querySelector('div');
+      if (isOn) {
+        el.classList.remove('bg-[#232B3B]');
+        el.classList.add('bg-[#10B981]');
+        if (knob) knob.classList.add('translate-x-5');
+        el.setAttribute('aria-checked', 'true');
+      } else {
+        el.classList.add('bg-[#232B3B]');
+        el.classList.remove('bg-[#10B981]');
+        if (knob) knob.classList.remove('translate-x-5');
+        el.setAttribute('aria-checked', 'false');
+      }
+    }
+
+    function toggleFilter(type, el) {
+      let newState = false;
+
+      if (type === 'broken') {
+        filterBrokenLinks = !filterBrokenLinks;
+        newState = filterBrokenLinks;
+      } else if (type === 'tech') {
+        detectTechStack = !detectTechStack;
+        newState = detectTechStack;
+      } else if (type === 'hiring') {
+        flagHiringContext = !flagHiringContext;
+        newState = flagHiringContext;
+      }
+
+      updateToggleVisual(el, newState);
+      applyFilters();
+    }
+
+    function loadSampleData() {
+      leads = SAMPLE_LEADS.map(lead => ({ ...lead }));
+      searchTerm = '';
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+
+      // Reset toggles to default ON
+      filterBrokenLinks = true;
+      detectTechStack = true;
+      flagHiringContext = true;
+
+      // Sync toggle visuals
+      const tBroken = document.getElementById('toggle-broken');
+      const tTech = document.getElementById('toggle-tech');
+      const tHiring = document.getElementById('toggle-hiring');
+      if (tBroken) updateToggleVisual(tBroken, true);
+      if (tTech) updateToggleVisual(tTech, true);
+      if (tHiring) updateToggleVisual(tHiring, true);
+
+      applyFilters();
+      showToast('Sample dataset loaded — 12 leads ready to scrub.');
+    }
+
+    // ===== LIVE BACKEND PROCESSING =====
+    let isProcessing = false;
+
+    function setProcessingState(processing, count = 0) {
+      isProcessing = processing;
+      const dropzone = document.getElementById('dropzone');
+      const processingIndicator = document.getElementById('processing-indicator');
+      const sampleBtn = document.getElementById('sample-btn');
+      const exportBtn = document.querySelector('button[onclick="exportCsv()"]');
+
+      if (dropzone) {
+        if (processing) {
+          dropzone.style.pointerEvents = 'none';
+          dropzone.style.opacity = '0.55';
+        } else {
+          dropzone.style.pointerEvents = '';
+          dropzone.style.opacity = '';
+        }
+      }
+
+      if (processingIndicator) {
+        processingIndicator.classList.toggle('hidden', !processing);
+        if (processing) {
+          // Re-render lucide icons inside the indicator
+          setTimeout(() => lucide.createIcons(), 10);
+        }
+      }
+
+      if (sampleBtn) sampleBtn.disabled = processing;
+      if (exportBtn) exportBtn.disabled = processing;
+
+      if (processing && count > 0) {
+        showToast(`Analyzing ${count} websites in real time... (usually 8–25s)`, false);
+      }
+    }
+
+    async function processFile(file) {
+      if (!file || !file.name.toLowerCase().endsWith('.csv')) {
+        showToast('Please select a valid .csv file.', true);
+        return;
+      }
+      if (isProcessing) return;
+
+      const formData = new FormData();
+      formData.append('csv', file);
+
+      setProcessingState(true, 0);
+
+      try {
+        const response = await fetch('/api/process', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || `Server error (${response.status})`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success || !Array.isArray(data.leads) || data.leads.length === 0) {
+          throw new Error(data.error || 'No usable leads returned from server.');
+        }
+
+        // Backend already returns perfectly shaped data
+        leads = data.leads;
+        searchTerm = '';
+        const si = document.getElementById('search-input');
+        if (si) si.value = '';
+
+        applyFilters();
+
+        const duration = data.durationSeconds ? ` in ${data.durationSeconds}s` : '';
+        showToast(`Enriched ${data.count} leads${duration} — real website data loaded.`);
+
+      } catch (err) {
+        console.error('Backend processing failed:', err);
+        showToast(err.message || 'Failed to process CSV on the server. Is the backend running?', true);
+      } finally {
+        setProcessingState(false);
+      }
+    }
+
+    function exportCsv() {
+      if (!filteredLeads || filteredLeads.length === 0) {
+        showToast('Nothing to export — adjust filters or load data first.', true);
+        return;
+      }
+
+      const headers = ['Rank', 'Company', 'Website', 'Fit Score', 'Status', 'Keywords'];
+      let csvRows = [headers.join(',')];
+
+      filteredLeads.forEach((lead, index) => {
+        let keywords = [...(lead.keywords || [])];
+        if (flagHiringContext && lead.hiring && !keywords.includes('Hiring')) {
+          keywords.unshift('Hiring');
+        }
+
+        const kwStr = keywords.join('; ');
+        const safeCompany = `"${(lead.company || '').replace(/"/g, '""')}"`;
+        const safeKeywords = `"${kwStr.replace(/"/g, '""')}"`;
+
+        const row = [
+          index + 1,
+          safeCompany,
+          lead.url || '',
+          lead.score || 'C',
+          lead.status || 'Active',
+          safeKeywords
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'leadtrim_cleaned.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported ${filteredLeads.length} visible leads as leadtrim_cleaned.csv`);
+    }
+
+    function initToggles() {
+      const toggles = [
+        { id: 'toggle-broken', type: 'broken' },
+        { id: 'toggle-tech', type: 'tech' },
+        { id: 'toggle-hiring', type: 'hiring' }
+      ];
+
+      toggles.forEach(({ id, type }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // Keyboard accessibility
+        el.setAttribute('tabindex', '0');
+        el.addEventListener('keydown', (e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleFilter(type, el);
+          }
+        });
+      });
+    }
+
+    function initDragDrop() {
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('file-input');
+      if (!dropzone || !fileInput) return;
+
+      // Click to open file picker
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      // Drag & drop
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dropzone-active');
+      });
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dropzone-active');
+      });
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dropzone-active');
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) processFile(file);
+      });
+
+      // Native file input
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) processFile(file);
+        // reset so same file can be chosen again
+        e.target.value = '';
+      });
+    }
+
+    function initSearch() {
+      const input = document.getElementById('search-input');
+      if (!input) return;
+      input.addEventListener('input', () => {
+        searchTerm = input.value || '';
+        applyFilters();
+      });
+    }
+
+    function init() {
+      // Set up interactive bits
+      initDragDrop();
+      initSearch();
+      initToggles();
+
+      // Initial toggle visuals (match default true state)
+      const tBroken = document.getElementById('toggle-broken');
+      const tTech = document.getElementById('toggle-tech');
+      const tHiring = document.getElementById('toggle-hiring');
+      if (tBroken) updateToggleVisual(tBroken, true);
+      if (tTech) updateToggleVisual(tTech, true);
+      if (tHiring) updateToggleVisual(tHiring, true);
+
+      // Start with clean empty state
+      updateShowingCount();
+      updateStats();
+      renderTable();
+
+      // Render static icons
+      lucide.createIcons();
+
+      // Keyboard hint for power users (optional)
+      const search = document.getElementById('search-input');
+      if (search) {
+        search.addEventListener('focus', () => {
+          if (leads.length === 0) {
+            // subtle nudge once
+          }
+        }, { once: true });
+      }
+
+      // Everything ready — no console noise
+      // console.log('%c[LeadTrim AI] Ready — fully client-side.', 'color:#6366F1');
+    }
+
+    // Boot
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
