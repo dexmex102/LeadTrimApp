@@ -70,12 +70,70 @@ LeadTrimApp/
 npm run dev          # Uses Node --watch for auto-reload
 ```
 
+## Lemon Squeezy Integration (Credits & Payments)
+
+LeadTrim now supports **paid credits** via Lemon Squeezy one-time purchases.
+
+### 1. Configure the webhook in Lemon Squeezy
+
+1. In your Lemon Squeezy dashboard, create a product with three variants:
+   - Variant ID `1718509` → 100 leads
+   - Variant ID `1718542` → 500 leads
+   - Variant ID `1718545` → 2000 leads
+
+2. Go to **Settings → Webhooks** and add a new webhook:
+   - **Endpoint URL**: `https://yourdomain.com/api/webhook`
+   - **Signing secret**: Copy the secret and put it in your environment (see below)
+   - Subscribe to the `order_created` event
+
+3. (Local development) Use a tool like ngrok or Cloudflare Tunnel so Lemon Squeezy can reach your machine:
+   ```
+   ngrok http 3000
+   ```
+   Then use the ngrok URL as the webhook endpoint during testing.
+
+### 2. Environment variables
+
+Copy the example file and fill in your real values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+```env
+LEMON_SQUEEZY_WEBHOOK_SECRET=your_actual_signing_secret_here
+LEMON_SQUEEZY_STORE_URL=https://yourstore.lemonsqueezy.com
+```
+
+### 3. How users buy and use credits
+
+1. Open the app and click **"Sign in"** (top right).
+2. Enter the **exact email** you will use (or already used) at checkout.
+3. Click **"Buy more"** → choose a pack → "Checkout with Lemon Squeezy".
+4. After successful payment, Lemon Squeezy fires the webhook → credits are added instantly.
+5. Refresh or re-open the Account modal to see the new balance.
+6. Upload real CSVs — each row costs 1 credit. The server blocks uploads when credits are insufficient.
+
+Sample data ("Load Sample Scraped List") is **always free** and never deducts credits.
+
+### 4. Important notes
+
+- Credits are tied to the **email address** used at checkout.
+- The webhook verifies the cryptographic signature — fake requests are rejected.
+- If you change the variant IDs in Lemon Squeezy, update the mapping inside `server.js`.
+- For production, move the credit store (`data/user-credits.json`) to a real database (Postgres, etc.).
+
+---
+
 ## Future Ideas (not implemented yet)
 
 - Streaming progress via Server-Sent Events
 - Caching enrichment results for repeated domains
 - Configurable timeout / concurrency in UI
 - Export original + enriched columns
+- Proper user accounts + team seats instead of email-only
 
 ---
 

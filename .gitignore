@@ -98,6 +98,10 @@ tmp/
 temp/
 uploads/
 
+# LeadTrim credits (email-based balances)
+data/
+data/user-credits.json
+
 # OS generated files
 .DS_Store
 .DS_Store?

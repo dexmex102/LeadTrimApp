@@ -70,6 +70,121 @@
   <!-- Toast container -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- Account / Sign In Modal -->
+  <div id="account-modal" class="hidden fixed inset-0 z-[300] items-center justify-center bg-black/70">
+    <div onclick="event.target.id === 'account-modal' && closeAccountModal()" class="absolute inset-0"></div>
+    <div class="relative w-full max-w-md mx-4 bg-[#121826] border border-[#232B3B] rounded-2xl shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div class="font-semibold text-lg">Account &amp; Credits</div>
+        <button onclick="closeAccountModal()" class="text-[#8A93A6] hover:text-white text-2xl leading-none">×</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-[#8A93A6] mb-1.5">Your purchase email</label>
+          <input id="account-email-input" type="email" placeholder="you@company.com"
+                 class="w-full bg-[#1A2233] border border-[#232B3B] focus:border-[#10B981] rounded-xl px-4 py-2.5 text-sm focus-ring">
+          <div class="text-[11px] text-[#8A93A6] mt-1.5">Use the same email you used at checkout. Credits are tied to this address.</div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="saveAccountEmail()"
+                  class="flex-1 bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] text-white font-semibold py-2.5 rounded-xl text-sm transition-all">
+            Save &amp; Load Credits
+          </button>
+          <button onclick="refreshCredits()"
+                  class="px-4 py-2.5 rounded-xl border border-[#232B3B] hover:bg-[#1A2233] text-sm text-[#8A93A6]">
+            Refresh
+          </button>
+        </div>
+
+        <div id="account-credits-display" class="hidden p-4 rounded-xl bg-[#1A2233] border border-[#232B3B]">
+          <div class="text-xs text-[#8A93A6]">Current balance</div>
+          <div id="account-credits-value" class="text-3xl font-bold tabular-nums tracking-[-1.5px] text-[#10B981]"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-[#232B3B] text-[11px] text-[#8A93A6]">
+        Credits are added automatically after each Lemon Squeezy purchase.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Modal - Premium SaaS Tiers -->
+  <div id="pricing-modal" class="hidden fixed inset-0 z-[300] items-center justify-center bg-black/70">
+    <div onclick="event.target.id === 'pricing-modal' && closePricingModal()" class="absolute inset-0"></div>
+    <div class="relative w-full max-w-5xl mx-4 bg-[#121826] border border-[#232B3B] rounded-3xl shadow-2xl p-8">
+      <div class="flex items-start justify-between mb-8">
+        <div>
+          <div class="font-semibold text-3xl tracking-[-0.025em]">B2B Pricing</div>
+          <div class="text-[#8A93A6] text-sm mt-2">One-time purchase. Credits never expire. Built for serious lead generation.</div>
+        </div>
+        <button onclick="closePricingModal()" class="text-[#8A93A6] hover:text-white text-3xl leading-none mt-[-4px]">×</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Pilot Tier -->
+        <div class="group bg-[#1A2233] border border-[#232B3B] hover:border-[#10B981]/40 rounded-2xl p-6 flex flex-col transition-all duration-200">
+          <div>
+            <div class="font-semibold text-xl tracking-tight">Pilot</div>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-5xl font-bold tabular-nums tracking-[-2px]">€29</span>
+            </div>
+            <div class="text-[#10B981] font-semibold text-lg mt-1">2,500 leads</div>
+          </div>
+          <div class="text-sm text-[#8A93A6] mt-4 leading-snug">
+            Perfect for small outbound campaigns and testing the platform.
+          </div>
+          <button onclick="window.open('https://leadtrim.lemonsqueezy.com/checkout/buy/3dc13199-4385-44be-888b-5b008ed38d6a', '_blank')"
+                  class="mt-auto w-full mt-8 bg-white/5 hover:bg-white/10 border border-[#232B3B] hover:border-[#10B981]/50 text-sm font-semibold py-3 rounded-xl transition-all active:scale-[0.985]">
+            Buy Credits
+          </button>
+        </div>
+
+        <!-- Agency Tier - Most Popular -->
+        <div class="group bg-[#1A2233] border border-[#10B981] ring-1 ring-[#10B981]/30 rounded-2xl p-6 flex flex-col relative transition-all duration-200">
+          <div class="absolute -top-3 right-5 bg-[#10B981] text-[#0A0E17] text-[10px] font-bold tracking-[0.5px] px-3 py-0.5 rounded-full">MOST POPULAR</div>
+          <div>
+            <div class="font-semibold text-xl tracking-tight">Agency</div>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-5xl font-bold tabular-nums tracking-[-2px]">€99</span>
+            </div>
+            <div class="text-[#10B981] font-semibold text-lg mt-1">10,000 leads</div>
+          </div>
+          <div class="text-sm text-[#8A93A6] mt-4 leading-snug">
+            Ideal for growing sales teams and dedicated lead generation agencies.
+          </div>
+          <button onclick="window.open('https://leadtrim.lemonsqueezy.com/checkout/buy/5f068522-ed5f-407c-bd3f-fb45e568bfff', '_blank')"
+                  class="mt-auto w-full mt-8 bg-[#10B981] hover:bg-[#0EA572] text-[#0A0E17] font-semibold py-3 rounded-xl transition-all active:scale-[0.985]">
+            Buy Credits
+          </button>
+        </div>
+
+        <!-- Scale Tier -->
+        <div class="group bg-[#1A2233] border border-[#232B3B] hover:border-[#10B981]/40 rounded-2xl p-6 flex flex-col transition-all duration-200">
+          <div>
+            <div class="font-semibold text-xl tracking-tight">Scale</div>
+            <div class="mt-4 flex items-baseline">
+              <span class="text-5xl font-bold tabular-nums tracking-[-2px]">€249</span>
+            </div>
+            <div class="text-[#10B981] font-semibold text-lg mt-1">50,000 leads</div>
+          </div>
+          <div class="text-sm text-[#8A93A6] mt-4 leading-snug">
+            Best value for high-volume outreach and massive enterprise datasets.
+          </div>
+          <button onclick="window.open('https://leadtrim.lemonsqueezy.com/checkout/buy/347d0899-7745-4cfe-8901-f5a9b2a9dbce', '_blank')"
+                  class="mt-auto w-full mt-8 bg-white/5 hover:bg-white/10 border border-[#232B3B] hover:border-[#10B981]/50 text-sm font-semibold py-3 rounded-xl transition-all active:scale-[0.985]">
+            Buy Credits
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center text-[11px] text-[#8A93A6]">
+        Secure payments powered by Lemon Squeezy. Credits added instantly. Built for B2B teams &amp; agencies.
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="sticky top-0 z-50 border-b border-[#232B3B] bg-[#0A0E17]/95 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -98,13 +213,9 @@
           <div class="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
         </div>
 
-        <!-- Avatar -->
-        <div class="flex items-center gap-2.5 pl-2 pr-1 py-1 rounded-full bg-[#121826] border border-[#232B3B]">
-          <div class="w-7 h-7 rounded-full bg-[#6366F1] flex items-center justify-center text-white text-xs font-bold ring-2 ring-[#232B3B]">AR</div>
-          <div class="hidden sm:block pr-2">
-            <div class="text-xs font-medium leading-none">Alex Rivera</div>
-            <div class="text-[10px] text-[#8A93A6]">Sales Ops</div>
-          </div>
+        <!-- Account / Credits Widget (dynamic) -->
+        <div id="account-widget" class="flex items-center gap-2 flex-shrink-0">
+          <!-- Populated by JS -->
         </div>
       </div>
     </div>
@@ -232,11 +343,19 @@
                    class="w-full bg-[#1A2233] border border-[#232B3B] focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981]/30 placeholder:text-[#8A93A6] transition-all pl-10 pr-4 py-[11px] rounded-xl text-sm focus-ring"
                    placeholder="Search company, URL, or keyword…">
           </div>
-          <button onclick="exportCsv()"
-                  class="flex items-center justify-center gap-2 px-6 py-[11px] rounded-xl bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] font-semibold text-sm text-white transition-all active:scale-[0.985] whitespace-nowrap">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            <span>Export Cleaned CSV</span>
-          </button>
+
+          <div class="flex gap-2">
+            <button id="clear-btn" onclick="clearList()"
+                    class="hidden items-center justify-center gap-2 px-5 py-[11px] rounded-xl border border-[#232B3B] hover:bg-[#1F2635] text-sm font-medium text-[#8A93A6] hover:text-[#E6EAF2] transition-all active:scale-[0.985]">
+              <i data-lucide="x" class="w-4 h-4"></i>
+              <span>Clear List</span>
+            </button>
+            <button onclick="exportCsv()"
+                    class="flex items-center justify-center gap-2 px-6 py-[11px] rounded-xl bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] font-semibold text-sm text-white transition-all active:scale-[0.985] whitespace-nowrap">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Export Cleaned CSV</span>
+            </button>
+          </div>
         </div>
 
         <!-- Results Table -->
@@ -307,6 +426,11 @@
     let detectTechStack = true;
     let flagHiringContext = true;
 
+    // ===== CREDIT / ACCOUNT STATE (Lemon Squeezy) =====
+    let currentUserEmail = null;
+    let currentCredits = 0;
+    const LS_STORE_URL = (window.LEMON_SQUEEZY_STORE_URL || 'https://yourstore.lemonsqueezy.com').replace(/\/$/, '');
+
     // ===== HELPERS =====
     function escapeHtml(str) {
       if (!str) return '';
@@ -359,6 +483,185 @@
       setTimeout(() => {
         if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
       }, isError ? 5200 : 2600);
+    }
+
+    // ===== CREDIT & ACCOUNT HELPERS (Lemon Squeezy integration) =====
+
+    function getSavedEmail() {
+      try {
+        return localStorage.getItem('leadtrim_user_email') || null;
+      } catch { return null; }
+    }
+
+    function saveEmail(email) {
+      const normalized = email ? email.toLowerCase().trim() : null;
+      if (!normalized) return false;
+      try {
+        localStorage.setItem('leadtrim_user_email', normalized);
+        currentUserEmail = normalized;
+        return true;
+      } catch { return false; }
+    }
+
+    async function fetchCredits(email) {
+      if (!email) return 0;
+      try {
+        const res = await fetch(`/api/credits?email=${encodeURIComponent(email)}`);
+        if (!res.ok) return 0;
+        const data = await res.json();
+        currentCredits = Number(data.credits || 0);
+        currentUserEmail = data.email || email;
+        return currentCredits;
+      } catch (e) {
+        console.warn('Failed to fetch credits', e);
+        return 0;
+      }
+    }
+
+    function updateHeaderAccountUI() {
+      const container = document.getElementById('account-widget');
+      if (!container) return;
+
+      if (!currentUserEmail) {
+        container.innerHTML = `
+          <button onclick="openAccountModal()"
+                  class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A2233] border border-[#232B3B] hover:border-[#10B981]/40 text-sm transition-colors">
+            <i data-lucide="user" class="w-4 h-4 text-[#8A93A6]"></i>
+            <span class="hidden sm:inline text-[#8A93A6]">Sign in</span>
+          </button>
+          <button onclick="openPricingModal()"
+                  class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/30 hover:bg-[#6366F1]/15 text-[#818CF8] text-sm font-medium transition-colors">
+            <i data-lucide="credit-card" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Upgrade</span>
+          </button>
+        `;
+      } else {
+        const creditText = currentCredits.toLocaleString();
+        container.innerHTML = `
+          <div onclick="openAccountModal()" 
+               class="flex items-center gap-3 pl-3.5 pr-3 py-1.5 rounded-full bg-[#121826] border border-[#232B3B] cursor-pointer hover:border-[#10B981]/40 transition-colors">
+            
+            <div class="flex flex-col">
+              <div class="text-[10px] text-[#8A93A6] leading-none">${escapeHtml(currentUserEmail)}</div>
+              <div class="font-semibold tabular-nums text-sm leading-none mt-1">
+                <span class="text-[#10B981]">${creditText}</span> credits
+              </div>
+            </div>
+
+            <div class="w-7 h-7 rounded-full bg-[#10B981]/10 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="wallet" class="w-4 h-4 text-[#10B981]"></i>
+            </div>
+          </div>
+
+          <button onclick="openPricingModal()"
+                  class="px-3 py-1.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 hover:bg-[#10B981]/15 text-[#10B981] text-xs font-semibold transition-colors">
+            Buy more
+          </button>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    async function refreshCredits(silent = false) {
+      if (!currentUserEmail) return;
+      const credits = await fetchCredits(currentUserEmail);
+      updateHeaderAccountUI();
+      const display = document.getElementById('account-credits-value');
+      const wrapper = document.getElementById('account-credits-display');
+      if (display && wrapper) {
+        display.textContent = credits.toLocaleString();
+        wrapper.classList.remove('hidden');
+      }
+      if (!silent) showToast(`Balance updated: ${credits} credits`);
+    }
+
+    function openAccountModal() {
+      const modal = document.getElementById('account-modal');
+      const input = document.getElementById('account-email-input');
+      const displayWrapper = document.getElementById('account-credits-display');
+      const displayValue = document.getElementById('account-credits-value');
+
+      if (currentUserEmail) {
+        input.value = currentUserEmail;
+      } else {
+        input.value = getSavedEmail() || '';
+      }
+
+      if (currentUserEmail && displayValue && displayWrapper) {
+        displayValue.textContent = (currentCredits || 0).toLocaleString();
+        displayWrapper.classList.remove('hidden');
+      } else if (displayWrapper) {
+        displayWrapper.classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function closeAccountModal() {
+      const modal = document.getElementById('account-modal');
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+
+    async function saveAccountEmail() {
+      const input = document.getElementById('account-email-input');
+      const email = input.value.trim();
+
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid email address', true);
+        return;
+      }
+
+      const saved = saveEmail(email);
+      if (saved) {
+        await fetchCredits(currentUserEmail);
+        updateHeaderAccountUI();
+        const displayWrapper = document.getElementById('account-credits-display');
+        const displayValue = document.getElementById('account-credits-value');
+        if (displayValue && displayWrapper) {
+          displayValue.textContent = currentCredits.toLocaleString();
+          displayWrapper.classList.remove('hidden');
+        }
+        showToast('Signed in. Credits loaded.');
+      }
+    }
+
+    function openPricingModal() {
+      const accountModal = document.getElementById('account-modal');
+      accountModal.classList.remove('flex');
+      accountModal.classList.add('hidden');
+
+      const modal = document.getElementById('pricing-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePricingModal() {
+      const modal = document.getElementById('pricing-modal');
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+
+    // Legacy function - no longer used (buttons now open real Lemon Squeezy checkout URLs directly)
+    function buyCredits(tier) {
+      console.warn('buyCredits() is deprecated. Buttons now link directly to Lemon Squeezy.');
+    }
+
+    function startLemonCheckout(variantId) {
+      const email = currentUserEmail || getSavedEmail() || '';
+      let url = `${LS_STORE_URL}/checkout/buy/${variantId}`;
+
+      if (email) {
+        url += `?checkout[custom][email]=${encodeURIComponent(email)}`;
+      }
+
+      // Open in new tab (Lemon Squeezy hosted checkout)
+      window.open(url, '_blank', 'noopener,noreferrer');
+
+      // Optional hint
+      showToast('Checkout opened in a new tab. Credits will appear automatically after payment.');
     }
 
     // ===== CSV PARSER =====
@@ -567,7 +870,7 @@
         let companyHTML = `<div class="font-semibold tracking-[-0.1px]">${escapeHtml(lead.company)}</div>`;
         if (detectTechStack && lead.tech && lead.tech.length > 0) {
           const techChips = lead.tech.map(t =>
-            `<span class="chip inline-block px-2 py-[3px] bg-[#1A2233] text-[#8A93A6] rounded-full mr-1 mb-1">${escapeHtml(t)}</span>`
+            `<span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-md bg-[#1E2937] text-[#94A3B8] border border-[#334155] mr-1 mb-1">${escapeHtml(t)}</span>`
           ).join('');
           companyHTML += `<div class="mt-1.5 flex flex-wrap -mb-1">${techChips}</div>`;
         }
@@ -613,6 +916,9 @@
       });
 
       lucide.createIcons();
+
+      // Show/hide Clear button based on whether data exists
+      updateClearButtonVisibility();
     }
 
     function updateToggleVisual(el, isOn) {
@@ -681,6 +987,7 @@
       const processingIndicator = document.getElementById('processing-indicator');
       const sampleBtn = document.getElementById('sample-btn');
       const exportBtn = document.querySelector('button[onclick="exportCsv()"]');
+      const clearBtn = document.getElementById('clear-btn');
 
       if (dropzone) {
         if (processing) {
@@ -702,6 +1009,7 @@
 
       if (sampleBtn) sampleBtn.disabled = processing;
       if (exportBtn) exportBtn.disabled = processing;
+      if (clearBtn) clearBtn.disabled = processing;
 
       if (processing && count > 0) {
         showToast(`Analyzing ${count} websites in real time... (usually 8–25s)`, false);
@@ -715,20 +1023,55 @@
       }
       if (isProcessing) return;
 
+      // Require a signed-in user with email for real uploads (samples are always free)
+      const email = currentUserEmail || getSavedEmail();
+      if (!email) {
+        showToast('Please sign in with your purchase email first (click the avatar area). Samples still work!', true);
+        openAccountModal();
+        return;
+      }
+
+      // Lightweight client-side row count for early credit check (best effort)
+      let estimatedRows = 0;
+      try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        estimatedRows = Math.max(0, lines.length - 1); // minus header
+      } catch (_) {
+        estimatedRows = 0;
+      }
+
+      if (estimatedRows > 0 && currentCredits < estimatedRows) {
+        showToast(`You have ${currentCredits} credits. This file needs ~${estimatedRows}. Please upgrade.`, true);
+        openPricingModal();
+        return;
+      }
+
+      // Prepare the request — send email both as header (preferred) and form field
       const formData = new FormData();
       formData.append('csv', file);
+      formData.append('email', email);
 
-      setProcessingState(true, 0);
+      setProcessingState(true, estimatedRows);
 
       try {
         const response = await fetch('/api/process', {
           method: 'POST',
+          headers: {
+            'X-User-Email': email
+          },
           body: formData
         });
 
         if (!response.ok) {
           const err = await response.json().catch(() => ({}));
-          throw new Error(err.error || `Server error (${response.status})`);
+          if (response.status === 402 || response.status === 401) {
+            // Credit or auth problem — show pricing
+            showToast(err.message || err.error || 'Not enough credits', true);
+            openPricingModal();
+            return;
+          }
+          throw new Error(err.error || err.message || `Server error (${response.status})`);
         }
 
         const data = await response.json();
@@ -744,6 +1087,15 @@
         if (si) si.value = '';
 
         applyFilters();
+
+        // Update credits from authoritative server response
+        if (typeof data.creditsRemaining === 'number') {
+          currentCredits = data.creditsRemaining;
+          updateHeaderAccountUI();
+        } else {
+          // Fallback refresh
+          await refreshCredits(true);
+        }
 
         const duration = data.durationSeconds ? ` in ${data.durationSeconds}s` : '';
         showToast(`Enriched ${data.count} leads${duration} — real website data loaded.`);
@@ -798,6 +1150,36 @@
       URL.revokeObjectURL(url);
 
       showToast(`Exported ${filteredLeads.length} visible leads as leadtrim_cleaned.csv`);
+    }
+
+    function clearList() {
+      leads = [];
+      filteredLeads = [];
+      searchTerm = '';
+
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+
+      const clearBtn = document.getElementById('clear-btn');
+      if (clearBtn) clearBtn.classList.add('hidden');
+
+      renderTable();
+      updateStats();
+      updateShowingCount();
+
+      showToast('List cleared.');
+    }
+
+    function updateClearButtonVisibility() {
+      const clearBtn = document.getElementById('clear-btn');
+      if (!clearBtn) return;
+      if (leads && leads.length > 0) {
+        clearBtn.classList.remove('hidden');
+        clearBtn.classList.add('flex');
+      } else {
+        clearBtn.classList.remove('flex');
+        clearBtn.classList.add('hidden');
+      }
     }
 
     function initToggles() {
@@ -897,6 +1279,16 @@
 
       // Everything ready — no console noise
       // console.log('%c[LeadTrim AI] Ready — fully client-side.', 'color:#6366F1');
+
+      // ===== BOOT CREDIT / ACCOUNT SYSTEM =====
+      (async () => {
+        const saved = getSavedEmail();
+        if (saved) {
+          currentUserEmail = saved;
+          await fetchCredits(saved);
+        }
+        updateHeaderAccountUI();
+      })();
     }
 
     // Boot
