@@ -102,6 +102,25 @@
           <div class="text-xs text-[#8A93A6]">Current balance</div>
           <div id="account-credits-value" class="text-3xl font-bold tabular-nums tracking-[-1.5px] text-[#10B981]"></div>
         </div>
+
+        <!-- Profile Settings -->
+        <div class="pt-4 border-t border-[#232B3B]">
+          <div class="text-sm font-semibold text-[#E6EAF2] mb-3">Profile Settings</div>
+          
+          <div>
+            <label class="block text-xs font-medium text-[#8A93A6] mb-1.5">Email Address</label>
+            <div class="flex gap-2">
+              <input id="profile-email-input" type="email" 
+                     class="flex-1 bg-[#1A2233] border border-[#232B3B] focus:border-[#10B981] rounded-xl px-4 py-2.5 text-sm focus-ring">
+              <button onclick="saveProfileEmail()"
+                      class="px-6 py-2.5 rounded-xl bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] text-white text-sm font-semibold transition-all">
+                Save Email
+              </button>
+            </div>
+          </div>
+
+          <div id="profile-email-status" class="text-xs mt-2 min-h-[16px]"></div>
+        </div>
       </div>
 
       <div class="mt-6 pt-4 border-t border-[#232B3B] text-[11px] text-[#8A93A6]">
@@ -182,6 +201,32 @@
       <div class="mt-8 text-center text-[11px] text-[#8A93A6]">
         Secure payments powered by Lemon Squeezy. Credits added instantly. Built for B2B teams &amp; agencies.
       </div>
+    </div>
+  </div>
+
+  <!-- Success Modal (Payment Success) - No separate success.html -->
+  <div id="success-modal" class="hidden fixed inset-0 z-[400] items-center justify-center bg-black/70">
+    <div onclick="closeSuccessModal()" class="absolute inset-0"></div>
+    <div class="relative w-full max-w-md mx-4 bg-[#121826] border border-[#232B3B] rounded-2xl shadow-2xl p-8 text-center">
+      
+      <!-- Large Green Checkmark Icon -->
+      <div class="mx-auto w-20 h-20 rounded-full bg-[#10B981]/10 flex items-center justify-center mb-6 ring-1 ring-[#10B981]/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+
+      <h2 class="text-3xl font-semibold tracking-tight mb-3">Payment Successful!</h2>
+      
+      <p class="text-[#8A93A6] text-lg mb-8 leading-snug">
+        Your credits have been added to your account.<br>
+        Thank you for choosing LeadTrim!
+      </p>
+
+      <button onclick="closeSuccessModal()"
+              class="w-full bg-[#10B981] hover:bg-[#0EA572] active:bg-[#0C8F63] text-white font-semibold py-3.5 rounded-xl transition-all active:scale-[0.985]">
+        Close
+      </button>
     </div>
   </div>
 
@@ -578,14 +623,14 @@
     function openAccountModal() {
       const modal = document.getElementById('account-modal');
       const input = document.getElementById('account-email-input');
+      const profileInput = document.getElementById('profile-email-input');
       const displayWrapper = document.getElementById('account-credits-display');
       const displayValue = document.getElementById('account-credits-value');
 
-      if (currentUserEmail) {
-        input.value = currentUserEmail;
-      } else {
-        input.value = getSavedEmail() || '';
-      }
+      const savedEmail = currentUserEmail || getSavedEmail() || '';
+
+      if (input) input.value = savedEmail;
+      if (profileInput) profileInput.value = savedEmail;
 
       if (currentUserEmail && displayValue && displayWrapper) {
         displayValue.textContent = (currentCredits || 0).toLocaleString();
@@ -594,9 +639,15 @@
         displayWrapper.classList.add('hidden');
       }
 
+      // Clear previous status messages
+      const profileStatus = document.getElementById('profile-email-status');
+      if (profileStatus) profileStatus.textContent = '';
+
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-      setTimeout(() => input.focus(), 50);
+      setTimeout(() => {
+        if (input) input.focus();
+      }, 50);
     }
 
     function closeAccountModal() {
@@ -628,6 +679,70 @@
       }
     }
 
+    // === Profile Settings - Save Email ===
+    async function saveProfileEmail() {
+      const input = document.getElementById('profile-email-input');
+      const statusEl = document.getElementById('profile-email-status');
+      const newEmail = input.value.trim();
+
+      if (!newEmail || !newEmail.includes('@')) {
+        statusEl.textContent = 'Please enter a valid email address.';
+        statusEl.className = 'text-xs text-[#F87171]';
+        return;
+      }
+
+      const currentEmail = currentUserEmail || getSavedEmail();
+
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'text-xs text-[#8A93A6]';
+
+      try {
+        const response = await fetch('/api/update-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            newEmail: newEmail,
+            currentEmail: currentEmail
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          statusEl.textContent = data.message || 'Email updated successfully!';
+          statusEl.className = 'text-xs text-[#10B981]';
+
+          // Update local state
+          saveEmail(newEmail);
+          currentUserEmail = newEmail;
+          updateHeaderAccountUI();
+
+          // Keep the account modal input in sync
+          const accountInput = document.getElementById('account-email-input');
+          if (accountInput) accountInput.value = newEmail;
+
+          // Refresh credits under the new email
+          setTimeout(async () => {
+            await fetchCredits(newEmail);
+            const displayValue = document.getElementById('account-credits-value');
+            if (displayValue) {
+              displayValue.textContent = (currentCredits || 0).toLocaleString();
+            }
+          }, 400);
+
+        } else {
+          statusEl.textContent = data.message || 'Failed to update email. Please try again.';
+          statusEl.className = 'text-xs text-[#F87171]';
+        }
+      } catch (error) {
+        console.error('Save email error:', error);
+        statusEl.textContent = 'Network error. Please try again later.';
+        statusEl.className = 'text-xs text-[#F87171]';
+      }
+    }
+
     function openPricingModal() {
       const accountModal = document.getElementById('account-modal');
       accountModal.classList.remove('flex');
@@ -642,6 +757,84 @@
       const modal = document.getElementById('pricing-modal');
       modal.classList.remove('flex');
       modal.classList.add('hidden');
+    }
+
+    // ===== Success Modal (Payment Confirmation) =====
+    function showSuccessModal() {
+      const modal = document.getElementById('success-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        // If opened manually (not via URL), still try to refresh credits
+        const userEmail = currentUserEmail || getSavedEmail();
+        if (userEmail) {
+          fetchCredits(userEmail).then(() => {
+            updateHeaderAccountUI();
+          });
+        }
+      }
+    }
+
+    function closeSuccessModal() {
+      const modal = document.getElementById('success-modal');
+      if (modal) {
+        // Remove any dynamic balance update notes
+        const note = modal.querySelector('.success-credit-note');
+        if (note) note.remove();
+
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+
+        // Clean the URL (remove ?success=true)
+        if (window.history && window.history.replaceState) {
+          const url = new URL(window.location);
+          url.searchParams.delete('success');
+          window.history.replaceState({}, document.title, url.toString());
+        }
+      }
+    }
+
+    // Allow closing success modal with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const successModal = document.getElementById('success-modal');
+        if (successModal && !successModal.classList.contains('hidden')) {
+          closeSuccessModal();
+        }
+      }
+    });
+
+    function checkForSuccessRedirect() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === 'true') {
+        setTimeout(() => {
+          showSuccessModal();
+
+          // Auto-refresh credits after successful payment
+          const userEmail = currentUserEmail || getSavedEmail();
+          if (userEmail) {
+            fetchCredits(userEmail).then(() => {
+              updateHeaderAccountUI();
+
+              // Show a small confirmation inside the success modal
+              const successModal = document.getElementById('success-modal');
+              if (successModal && !successModal.classList.contains('hidden')) {
+                const existingNote = successModal.querySelector('.success-credit-note');
+                if (!existingNote) {
+                  const note = document.createElement('div');
+                  note.className = 'success-credit-note mt-4 text-xs text-[#10B981] bg-[#10B981]/10 py-1.5 px-3 rounded-lg';
+                  note.textContent = '✓ Your balance has been updated';
+                  const button = successModal.querySelector('button');
+                  if (button) {
+                    button.parentNode.insertBefore(note, button);
+                  }
+                }
+              }
+            });
+          }
+        }, 450);
+      }
     }
 
     // Legacy function - no longer used (buttons now open real Lemon Squeezy checkout URLs directly)
@@ -1289,6 +1482,9 @@
         }
         updateHeaderAccountUI();
       })();
+
+      // Check for Lemon Squeezy success redirect
+      checkForSuccessRedirect();
     }
 
     // Boot
