@@ -2,12 +2,8 @@
  * Vercel Serverless Function
  * Endpoint: POST /api/update-email
  *
- * This is an example implementation.
- * In production, you should:
- *   - Validate the new email
- *   - Verify the user owns the currentEmail (via session / magic link / etc.)
- *   - Update the email in your database
- *   - Optionally transfer credits from old email to new email
+ * Allows a user to change their email. Transfers credits from the old email
+ * to the new one in the database.
  */
 
 import { transferCredits } from '../lib/db.js';
@@ -27,7 +23,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Transfer credits from old email to new email in the database
     const result = await transferCredits(currentEmail, newEmail);
 
     console.log(`[Update Email] ${currentEmail} → ${newEmail}`);
