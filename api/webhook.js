@@ -79,8 +79,11 @@ async function addCreditsToUser(email, creditsToAdd) {
  * Main Webhook Handler
  */
 export default async function handler(req, res) {
+  console.log('[LemonSqueezy] Webhook received a request');
+
   // Only allow POST requests
   if (req.method !== 'POST') {
+    console.warn('[LemonSqueezy] Non-POST request received');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
@@ -89,27 +92,41 @@ export default async function handler(req, res) {
   try {
     // 1. Read raw body (must be done before any parsing)
     const rawBody = await getRawBody(req);
+    console.log(`[LemonSqueezy] Raw body length: ${rawBody.length} bytes`);
 
-    // 2. Get signature from headers (Lemon Squeezy sends it as 'X-Signature')
+    // 2. Get signature from headers
     const signature = req.headers['x-signature'] || req.headers['X-Signature'];
+    console.log(`[LemonSqueezy] Received signature: ${signature ? signature.substring(0, 12) + '...' : 'MISSING'}`);
+
+    if (!signature) {
+      console.warn('[LemonSqueezy] No X-Signature header found');
+      return res.status(401).json({ error: 'Missing signature' });
+    }
 
     // 3. Verify signature
     const isValid = verifySignature(rawBody, signature, SIGNING_SECRET);
+    console.log(`[LemonSqueezy] Signature valid: ${isValid}`);
 
     if (!isValid) {
-      console.warn('[LemonSqueezy] Invalid webhook signature');
+      console.warn('[LemonSqueezy] Invalid webhook signature — possible secret mismatch');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
     // 4. Parse the event
     const event = JSON.parse(rawBody.toString('utf8'));
+    console.log('[LemonSqueezy] Event received:', {
+      event_name: event?.meta?.event_name,
+      test_mode: event?.meta?.test_mode,
+      created_at: event?.meta?.created_at,
+    });
 
-    // 5. Handle only order_created events (ignore others)
+    // 5. Handle only order_created events
     if (event?.meta?.event_name !== 'order_created') {
+      console.log(`[LemonSqueezy] Ignoring event: ${event?.meta?.event_name}`);
       return res.status(200).json({ received: true, ignored: event?.meta?.event_name });
     }
 
-    // 6. Extract useful data from Lemon Squeezy payload
+    // 6. Extract useful data
     const attributes = event.data?.attributes || {};
     const customerEmail =
       attributes.user_email ||
@@ -126,6 +143,12 @@ export default async function handler(req, res) {
 
     const isTestMode = !!event.meta?.test_mode;
 
+    console.log('[LemonSqueezy] Extracted data:', {
+      customerEmail,
+      variantId,
+      isTestMode,
+    });
+
     if (!customerEmail || !variantId) {
       console.warn('[LemonSqueezy] Missing email or variant_id in payload');
       return res.status(200).json({ received: true, warning: 'Missing data' });
@@ -139,20 +162,33 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, warning: 'Unknown variant' });
     }
 
-    // 8. Add credits to the user (implement DB logic above)
-    await addCreditsToUser(customerEmail.toLowerCase().trim(), creditsToAdd);
+    console.log(`[LemonSqueezy] Will add ${creditsToAdd} credits to ${customerEmail}`);
+
+    // 8. Add credits to the user
+    try {
+      await addCreditsToUser(customerEmail.toLowerCase().trim(), creditsToAdd);
+      console.log(`[LemonSqueezy] Successfully added credits to database`);
+    } catch (dbError) {
+      console.error('[LemonSqueezy] Database error while adding credits:', dbError);
+      // Still return 200 so Lemon Squeezy doesn't retry, but log the failure
+      return res.status(200).json({ 
+        received: true, 
+        error: 'Database update failed',
+        details: dbError.message 
+      });
+    }
 
     console.log(
-      `[LemonSqueezy] ${isTestMode ? '[TEST] ' : ''}Order processed: ${variantId} → +${creditsToAdd} credits for ${customerEmail}`
+      `[LemonSqueezy] ${isTestMode ? '[TEST MODE] ' : ''}Order processed successfully: ${variantId} → +${creditsToAdd} credits for ${customerEmail}`
     );
 
-    // 9. Send thank-you email (optional but recommended)
+    // 9. Send thank-you email (if Resend is configured)
     try {
       if (process.env.RESEND_API_KEY) {
         const resend = new Resend(process.env.RESEND_API_KEY);
 
         await resend.emails.send({
-          from: 'LeadTrim <noreply@leadtrim.company>', // Change this after verifying your domain in Resend
+          from: 'LeadTrim <noreply@leadtrim.company>',
           to: customerEmail,
           subject: 'Thank you for your purchase – Your LeadTrim credits are ready!',
           html: `
@@ -175,13 +211,14 @@ export default async function handler(req, res) {
         });
 
         console.log(`[LemonSqueezy] Thank-you email sent to ${customerEmail}`);
+      } else {
+        console.log('[LemonSqueezy] RESEND_API_KEY not set — skipping email');
       }
     } catch (emailErr) {
       console.error('[LemonSqueezy] Failed to send thank-you email:', emailErr);
-      // Don't fail the whole webhook if email fails
     }
 
-    // 9. Always return 200 quickly
+    // 10. Return success
     return res.status(200).json({
       received: true,
       variant_id: variantId,
@@ -191,8 +228,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[LemonSqueezy] Webhook error:', error);
-    // Still return 200 to prevent Lemon Squeezy from retrying excessively
+    console.error('[LemonSqueezy] Unexpected webhook error:', error);
+    console.error(error.stack);
     return res.status(200).json({ received: true, error: 'Internal processing error' });
   }
 }
