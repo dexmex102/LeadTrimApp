@@ -15,7 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { enrichLeads } from './lib/enricher.js';
-import { getCredits, addCredits, deductCredits, normalizeEmail } from './lib/credits.js';
+import { getCredits, addCredits, deductCredits, normalizeEmail, updateUserEmail } from './lib/credits.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,6 +78,34 @@ app.get('/api/credits', (req, res) => {
 
   const credits = getCredits(normalized);
   res.json({ email: normalized, credits });
+});
+
+/**
+ * Update user's email (transfers credits from old email to new one)
+ * Called by the frontend when user clicks "Save Email" in Profile Settings.
+ */
+app.post('/api/update-email', (req, res) => {
+  try {
+    const { newEmail, currentEmail } = req.body;
+
+    if (!newEmail || !currentEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both currentEmail and newEmail are required'
+      });
+    }
+
+    const result = updateUserEmail(currentEmail, newEmail);
+
+    return res.json(result);
+
+  } catch (err) {
+    console.error('[update-email] Error:', err.message);
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Failed to update email'
+    });
+  }
 });
 
 /**
@@ -328,6 +356,7 @@ app.listen(PORT, () => {
 ║  API endpoints:       POST /api/process                    ║
 ║                       POST /api/webhook  (Lemon Squeezy)   ║
 ║                       GET  /api/credits                    ║
+║                       POST /api/update-email               ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Lemon Squeezy credits system is active.                   ║
 ║  Configure LEMON_SQUEEZY_WEBHOOK_SECRET in .env            ║
