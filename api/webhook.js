@@ -64,13 +64,20 @@ const VARIANT_CREDITS = {
  * Add credits to a user after successful Lemon Squeezy payment.
  */
 async function addCreditsToUser(email, creditsToAdd) {
-  if (!email || !creditsToAdd) return;
+  console.log(`[DB] Starting credit addition for ${email} → +${creditsToAdd}`);
+
+  if (!email || !creditsToAdd) {
+    console.warn('[DB] Skipped - missing email or creditsToAdd');
+    return;
+  }
 
   try {
     const newBalance = await addCredits(email, creditsToAdd);
-    console.log(`[LemonSqueezy] Added ${creditsToAdd} credits to ${email} (new balance: ${newBalance})`);
+    console.log(`[DB] ✅ Credit addition successful. New balance: ${newBalance}`);
+    return newBalance;
   } catch (err) {
-    console.error('[LemonSqueezy] Failed to add credits to DB:', err);
+    console.error('[DB] ❌ Failed to add credits:');
+    console.error(err);
     throw err;
   }
 }
@@ -79,7 +86,10 @@ async function addCreditsToUser(email, creditsToAdd) {
  * Main Webhook Handler
  */
 export default async function handler(req, res) {
-  console.log('[LemonSqueezy] Webhook received a request');
+  console.log('========================================');
+  console.log('[WEBHOOK] Lemon Squeezy webhook received');
+  console.log('Time:', new Date().toISOString());
+  console.log('Method:', req.method);
 
   // Only allow POST requests
   if (req.method !== 'POST') {
@@ -88,6 +98,10 @@ export default async function handler(req, res) {
   }
 
   const SIGNING_SECRET = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || 'my_super_secret_lemon_123';
+
+  // Check if database connection string is available
+  const hasDbUrl = !!(process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL);
+  console.log('[WEBHOOK] Database connection string present:', hasDbUrl);
 
   try {
     // 1. Read raw body (must be done before any parsing)
@@ -164,17 +178,23 @@ export default async function handler(req, res) {
 
     console.log(`[LemonSqueezy] Will add ${creditsToAdd} credits to ${customerEmail}`);
 
-    // 8. Add credits to the user
+    // 8. Add credits to the user (this is the critical part)
+    console.log(`[WEBHOOK] Attempting to add ${creditsToAdd} credits to ${customerEmail}`);
+
     try {
       await addCreditsToUser(customerEmail.toLowerCase().trim(), creditsToAdd);
-      console.log(`[LemonSqueezy] Successfully added credits to database`);
+      console.log(`[WEBHOOK] ✅ SUCCESS: Credits added to database`);
     } catch (dbError) {
-      console.error('[LemonSqueezy] Database error while adding credits:', dbError);
-      // Still return 200 so Lemon Squeezy doesn't retry, but log the failure
+      console.error('[WEBHOOK] ❌ DATABASE ERROR while adding credits:');
+      console.error(dbError);
+      console.error('Stack:', dbError.stack);
+      
+      // Still return 200 to Lemon Squeezy (to prevent infinite retries)
+      // but we log the failure clearly so we can see it in Vercel logs.
       return res.status(200).json({ 
         received: true, 
-        error: 'Database update failed',
-        details: dbError.message 
+        status: 'webhook_received_but_db_failed',
+        error: dbError.message 
       });
     }
 
@@ -218,7 +238,10 @@ export default async function handler(req, res) {
       console.error('[LemonSqueezy] Failed to send thank-you email:', emailErr);
     }
 
-    // 10. Return success
+    // 10. Return success to Lemon Squeezy
+    console.log('[WEBHOOK] ✅ Webhook processed successfully. Returning 200 to Lemon Squeezy.');
+    console.log('========================================');
+
     return res.status(200).json({
       received: true,
       variant_id: variantId,
@@ -228,8 +251,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[LemonSqueezy] Unexpected webhook error:', error);
+    console.error('[WEBHOOK] ❌ CRITICAL ERROR in webhook handler:');
+    console.error(error);
     console.error(error.stack);
+    console.log('========================================');
     return res.status(200).json({ received: true, error: 'Internal processing error' });
   }
 }
