@@ -14,7 +14,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Support both query param and header (to match old behavior)
     const email = req.query.email || req.headers['x-user-email'];
 
     if (!email) {
@@ -32,10 +31,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[api/credits] Error:', error);
+    console.error('[api/credits] Error fetching credits:', error);
+
     return res.status(500).json({
-      error: 'Failed to fetch credits',
-      details: error.message
+      error: 'Failed to fetch credits from database',
+      details: error.message || 'Unknown database error'
     });
   }
 }
