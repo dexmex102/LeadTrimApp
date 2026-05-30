@@ -10,6 +10,8 @@
  *   - Optionally transfer credits from old email to new email
  */
 
+import { transferCredits } from '../lib/db.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
@@ -25,40 +27,22 @@ export default async function handler(req, res) {
       });
     }
 
-    // === DATABASE UPDATE LOGIC ===
-    // Replace this section with your actual database call.
-    //
-    // Example using @neondatabase/serverless (recommended with Neon):
-    // import { neon } from '@neondatabase/serverless';
-    // const sql = neon(process.env.DATABASE_URL_UNPOOLED);
-    //
-    // await sql`
-    //   UPDATE users 
-    //   SET email = ${newEmail.toLowerCase().trim()}
-    //   WHERE email = ${currentEmail?.toLowerCase().trim()}
-    // `;
-    //
-    // If you want to transfer credits from old email to new email:
-    // await sql`
-    //   UPDATE users 
-    //   SET email = ${newEmail.toLowerCase().trim()}
-    //   WHERE email = ${currentEmail?.toLowerCase().trim()}
-    // `;
+    // Transfer credits from old email to new email in the database
+    const result = await transferCredits(currentEmail, newEmail);
 
     console.log(`[Update Email] ${currentEmail} → ${newEmail}`);
 
     return res.status(200).json({
       success: true,
       message: 'Email updated successfully!',
-      oldEmail: currentEmail,
-      newEmail: newEmail.toLowerCase()
+      ...result
     });
 
   } catch (error) {
     console.error('Update email error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Something went wrong while updating the email.'
+      message: error.message || 'Something went wrong while updating the email.'
     });
   }
 }

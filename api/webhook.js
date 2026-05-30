@@ -6,6 +6,8 @@
  */
 
 import crypto from 'crypto';
+import { addCredits } from '../lib/db.js';
+import { Resend } from 'resend';
 
 // Disable Vercel's automatic body parsing (critical for signature verification)
 export const config = {
@@ -59,28 +61,18 @@ const VARIANT_CREDITS = {
 };
 
 /**
- * TODO: Replace this function with your actual database logic.
- *
- * Examples:
- * - Vercel Postgres: await sql`UPDATE users SET credits = credits + ${amount} WHERE email = ${email}`
- * - Supabase: await supabase.from('users').update({ credits: ... }).eq('email', email)
- * - Upstash Redis, PlanetScale, MongoDB, etc.
+ * Add credits to a user after successful Lemon Squeezy payment.
  */
 async function addCreditsToUser(email, creditsToAdd) {
   if (!email || !creditsToAdd) return;
 
-  console.log(`[LemonSqueezy] Adding ${creditsToAdd} credits to ${email}`);
-
-  // === IMPLEMENT YOUR DATABASE UPDATE HERE ===
-  // Example with @vercel/postgres:
-  //
-  // import { sql } from '@vercel/postgres';
-  // await sql`
-  //   INSERT INTO users (email, credits)
-  //   VALUES (${email}, ${creditsToAdd})
-  //   ON CONFLICT (email)
-  //   DO UPDATE SET credits = users.credits + ${creditsToAdd}, updated_at = NOW()
-  // `;
+  try {
+    const newBalance = await addCredits(email, creditsToAdd);
+    console.log(`[LemonSqueezy] Added ${creditsToAdd} credits to ${email} (new balance: ${newBalance})`);
+  } catch (err) {
+    console.error('[LemonSqueezy] Failed to add credits to DB:', err);
+    throw err;
+  }
 }
 
 /**
@@ -153,6 +145,41 @@ export default async function handler(req, res) {
     console.log(
       `[LemonSqueezy] ${isTestMode ? '[TEST] ' : ''}Order processed: ${variantId} → +${creditsToAdd} credits for ${customerEmail}`
     );
+
+    // 9. Send thank-you email (optional but recommended)
+    try {
+      if (process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        await resend.emails.send({
+          from: 'LeadTrim <noreply@leadtrim.company>', // Change this after verifying your domain in Resend
+          to: customerEmail,
+          subject: 'Thank you for your purchase – Your LeadTrim credits are ready!',
+          html: `
+            <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #111827;">Payment Successful!</h2>
+              <p>Hi there,</p>
+              <p>Thank you for purchasing <strong>${creditsToAdd.toLocaleString()} leads</strong> with LeadTrim.</p>
+              <p>Your credits have been added to your account and are ready to use.</p>
+              <p style="margin-top: 24px;">
+                <a href="https://leadtrim.company" 
+                   style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
+                  Go to Dashboard
+                </a>
+              </p>
+              <p style="margin-top: 32px; color: #6b7280; font-size: 14px;">
+                If you have any questions, just reply to this email.
+              </p>
+            </div>
+          `
+        });
+
+        console.log(`[LemonSqueezy] Thank-you email sent to ${customerEmail}`);
+      }
+    } catch (emailErr) {
+      console.error('[LemonSqueezy] Failed to send thank-you email:', emailErr);
+      // Don't fail the whole webhook if email fails
+    }
 
     // 9. Always return 200 quickly
     return res.status(200).json({
